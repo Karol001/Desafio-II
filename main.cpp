@@ -1,150 +1,164 @@
 #include <iostream>
 #include <string>
-#include <vector>
+#include <ctime>
 
-// Clase Transaccion
+using namespace std;
+
 class Transaccion {
 private:
-    std::string fecha;
-    std::string hora;
+    string fecha;  // Formato: YYYY-MM-DD
+    string hora;   // Formato: HH:MM:SS
     float cantidad;
-    std::string categoriaCombustible;
-    std::string metodoPago;
-    std::string documentoCliente;
+    string categoriaCombustible;
+    string metodoPago;
+    string documentoCliente;
     float monto;
 
 public:
-    Transaccion() = default;
+    Transaccion(float cantidad, string categoriaCombustible, string metodoPago, string documentoCliente, float monto) {
+        this->cantidad = cantidad;
+        this->categoriaCombustible = categoriaCombustible;
+        this->metodoPago = metodoPago;
+        this->documentoCliente = documentoCliente;
+        this->monto = monto;
 
-    Transaccion(const std::string& fecha, const std::string& hora, float cantidad,
-                const std::string& categoriaCombustible, const std::string& metodoPago,
-                const std::string& documentoCliente, float monto)
-        : fecha(fecha), hora(hora), cantidad(cantidad), categoriaCombustible(categoriaCombustible),
-        metodoPago(metodoPago), documentoCliente(documentoCliente), monto(monto) {}
+        // Obtener la fecha y hora actual
+        time_t t = time(0); // Obtener el tiempo actual
+        struct tm* now = localtime(&t);
 
-    void mostrarTransaccion() const {
-        std::cout << "Fecha: " << fecha << ", Hora: " << hora
-                  << ", Cantidad: " << cantidad << " litros, Categoría: " << categoriaCombustible
-                  << ", Pago: " << metodoPago << ", Cliente: " << documentoCliente
-                  << ", Monto: $" << monto << std::endl;
+        // Formatear la fecha como YYYY-MM-DD
+        fecha = to_string(now->tm_year + 1900) + "-" +
+                to_string(now->tm_mon + 1) + "-" +
+                to_string(now->tm_mday);
+
+        // Formatear la hora como HH:MM:SS
+        hora = to_string(now->tm_hour) + ":" +
+               to_string(now->tm_min) + ":" +
+               to_string(now->tm_sec);
+    }
+
+    // Métodos getter para los atributos
+    string getFecha() const {
+        return fecha;
+    }
+
+    string getHora() const {
+        return hora;
+    }
+
+    float getCantidad() const {
+        return cantidad;
+    }
+
+    string getCategoriaCombustible() const {
+        return categoriaCombustible;
+    }
+
+    string getMetodoPago() const {
+        return metodoPago;
+    }
+
+    string getDocumentoCliente() const {
+        return documentoCliente;
+    }
+
+    float getMonto() const {
+        return monto;
     }
 };
 
-// Clase Surtidor
 class Surtidor {
 private:
-    std::string codigo;
-    std::string modelo;
+    string codigo;
+    string modelo;
     bool activo;
-    std::vector<Transaccion> transacciones;
+    Transaccion** transacciones; // Puntero a un arreglo dinámico de transacciones
+    int numTransacciones; // Contador de transacciones
 
 public:
-    Surtidor(const std::string& codigo, const std::string& modelo)
-        : codigo(codigo), modelo(modelo), activo(true) {}
-
-    void registrarVenta(const Transaccion& nuevaTransaccion) {
-        transacciones.push_back(nuevaTransaccion);
-        std::cout << "Venta registrada en surtidor " << codigo << std::endl;
+    Surtidor(string codigo, string modelo) {
+        this->codigo = codigo;
+        this->modelo = modelo;
+        this->activo = true;
+        this->transacciones = nullptr; // Inicialmente sin transacciones
+        this->numTransacciones = 0;
     }
 
-    std::vector<Transaccion> consultarTransacciones() const {
-        return transacciones;
+    void registrarVenta(Transaccion* nuevaTransaccion) {
     }
 
-    std::string getCodigo() const {
-        return codigo;
-    }
+    // Otros métodos...
 };
 
-// Clase EstacionDeServicio
 class EstacionDeServicio {
 private:
-    std::string nombre;
-    std::string codigo;
-    std::string gerente;
-    std::string region;
-    std::pair<float, float> ubicacionGPS;
-    std::vector<std::pair<std::string, float>> capacidadTanque;
-    std::vector<Surtidor> surtidores;
+    string nombre;
+    string codigo;
+    string gerente;
+    string region;
+    float* capacidadTanque; // Puntero a un arreglo dinámico de capacidades
+    int numCategorias; // Cantidad de categorías
+    Surtidor** surtidores; // Puntero a un arreglo dinámico de surtidores
+    int numSurtidores; // Contador de surtidores
 
 public:
-    EstacionDeServicio(const std::string& nombre, const std::string& codigo, const std::string& gerente,
-                       const std::string& region, std::pair<float, float> ubicacionGPS)
-        : nombre(nombre), codigo(codigo), gerente(gerente), region(region), ubicacionGPS(ubicacionGPS) {}
-
-    std::string getCodigo() const {
-        return codigo;
+    EstacionDeServicio(string nombre, string codigo, string gerente, string region, int numCategorias) {
+        this->nombre = nombre;
+        this->codigo = codigo;
+        this->gerente = gerente;
+        this->region = region;
+        this->numCategorias = numCategorias;
+        this->capacidadTanque = new float[numCategorias]; // Asignar espacio para capacidades
+        this->surtidores = nullptr; // Inicialmente sin surtidores
+        this->numSurtidores = 0;
     }
 
-    void agregarSurtidor(const Surtidor& nuevoSurtidor) {
-        surtidores.push_back(nuevoSurtidor);
-        std::cout << "Surtidor agregado a la estación " << nombre << std::endl;
-    }
-
-    void eliminarSurtidor(const std::string& codigoSurtidor) {
-        for (auto it = surtidores.begin(); it != surtidores.end(); ++it) {
-            if (it->getCodigo() == codigoSurtidor && it->consultarTransacciones().empty()) {
-                surtidores.erase(it);
-                std::cout << "Surtidor " << codigoSurtidor << " eliminado de la estación " << nombre << std::endl;
-                return;
-            }
+    ~EstacionDeServicio() {
+        delete[] capacidadTanque; // Liberar memoria
+        // Liberar memoria de surtidores
+        for (int i = 0; i < numSurtidores; ++i) {
+            delete surtidores[i];
         }
-        std::cout << "No se encontró el surtidor " << codigoSurtidor << " o tiene transacciones registradas." << std::endl;
+        delete[] surtidores;
     }
 
-    std::vector<Transaccion> consultarTransacciones() const {
-        std::vector<Transaccion> todasTransacciones;
-        for (const auto& surtidor : surtidores) {
-            auto transacciones = surtidor.consultarTransacciones();
-            todasTransacciones.insert(todasTransacciones.end(), transacciones.begin(), transacciones.end());
-        }
-        return todasTransacciones;
+    void agregarSurtidor(Surtidor* nuevoSurtidor) {
     }
 
-    float calcularVenta(const std::string& categoriaCombustible) const {
-        float totalVentas = 0.0f;
-        return totalVentas;
-    }
+    // Otros métodos...
 };
 
-// Clase RedNacional
 class RedNacional {
 private:
-    std::vector<EstacionDeServicio> estaciones;
-    std::vector<std::pair<std::string, float>> preciosPorRegion;
+    EstacionDeServicio** estaciones; // Puntero a un arreglo dinámico de estaciones de servicio
+    int numEstaciones; // Contador de estaciones
+    float* preciosPorRegion; // Puntero a un arreglo dinámico para precios por región
+    int numRegiones; // Cantidad de regiones
 
 public:
-    void agregarEstacion(const EstacionDeServicio& nuevaEstacion) {
-        estaciones.push_back(nuevaEstacion);
-        std::cout << "Estación de servicio agregada a la red nacional." << std::endl;
+    RedNacional(int numRegiones) {
+        this->numEstaciones = 0;
+        this->estaciones = nullptr; // Inicialmente sin estaciones
+        this->numRegiones = numRegiones;
+        this->preciosPorRegion = new float[numRegiones]; // Asignar espacio para precios
     }
 
-    void eliminarEstacion(const std::string& codigoEstacion) {
-        for (auto it = estaciones.begin(); it != estaciones.end(); ++it) {
-            if (it->getCodigo() == codigoEstacion && it->consultarTransacciones().empty()) {
-                estaciones.erase(it);
-                std::cout << "Estación de servicio eliminada de la red nacional." << std::endl;
-                return;
-            }
+    ~RedNacional() {
+        delete[] preciosPorRegion; // Liberar memoria
+        // Liberar memoria de estaciones
+        for (int i = 0; i < numEstaciones; ++i) {
+            delete estaciones[i];
         }
-        std::cout << "No se encontró la estación de servicio o tiene transacciones." << std::endl;
+        delete[] estaciones;
     }
 
-    float calcularVentas(const std::string& codigoEstacion, const std::string& categoriaCombustible) const {
-        float totalVentas = 0.0f;
-        for (const auto& estacion : estaciones) {
-            if (estacion.getCodigo() == codigoEstacion) {
-                totalVentas += estacion.calcularVenta(categoriaCombustible);
-            }
-        }
-        return totalVentas;
+    void agregarEstacion(EstacionDeServicio* nuevaEstacion) {
+
     }
+
 };
 
 int main() {
-    // Prueba del sistema
-    RedNacional miRed;
-    std::cout << "Sistema inicializado correctamente." << std::endl;
-
+    // Prueba de funcionalidad aquí
     return 0;
 }
