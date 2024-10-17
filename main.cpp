@@ -4,6 +4,7 @@
 
 using namespace std;
 
+// Clase Transaccion para registrar una transacción de combustible
 class Transaccion {
 private:
     string fecha;  // Formato: YYYY-MM-DD
@@ -67,6 +68,7 @@ public:
     }
 };
 
+// Clase Surtidor para manejar los surtidores de combustible
 class Surtidor {
 private:
     string codigo;
@@ -84,12 +86,37 @@ public:
         this->numTransacciones = 0;
     }
 
-    void registrarVenta(Transaccion* nuevaTransaccion) {
+    ~Surtidor() {
+        // Liberar memoria de transacciones
+        for (int i = 0; i < numTransacciones; ++i) {
+            delete transacciones[i];
+        }
+        delete[] transacciones;
     }
 
-    // Otros métodos...
+    void registrarVenta(Transaccion* nuevaTransaccion) {
+        // Crear un nuevo arreglo dinámico con un espacio adicional
+        Transaccion** nuevoArreglo = new Transaccion*[numTransacciones + 1];
+
+        // Copiar las transacciones existentes al nuevo arreglo
+        for (int i = 0; i < numTransacciones; ++i) {
+            nuevoArreglo[i] = transacciones[i];
+        }
+
+        // Agregar la nueva transacción al arreglo
+        nuevoArreglo[numTransacciones] = nuevaTransaccion;
+
+        // Liberar la memoria del arreglo anterior
+        delete[] transacciones;
+
+        // Actualizar el puntero y el contador de transacciones
+        transacciones = nuevoArreglo;
+        numTransacciones++;
+    }
+
 };
 
+// Clase EstacionDeServicio para gestionar las estaciones de servicio
 class EstacionDeServicio {
 private:
     string nombre;
@@ -114,20 +141,36 @@ public:
     }
 
     ~EstacionDeServicio() {
-        delete[] capacidadTanque; // Liberar memoria
-        // Liberar memoria de surtidores
+        delete[] capacidadTanque; // Liberar memoria de capacidad del tanque
         for (int i = 0; i < numSurtidores; ++i) {
             delete surtidores[i];
         }
-        delete[] surtidores;
+        delete[] surtidores; // Liberar memoria de surtidores
     }
 
     void agregarSurtidor(Surtidor* nuevoSurtidor) {
+        // Crear un nuevo arreglo dinámico con un espacio adicional
+        Surtidor** nuevoArreglo = new Surtidor*[numSurtidores + 1];
+
+        // Copiar los surtidores existentes al nuevo arreglo
+        for (int i = 0; i < numSurtidores; ++i) {
+            nuevoArreglo[i] = surtidores[i];
+        }
+
+        // Agregar el nuevo surtidor al arreglo
+        nuevoArreglo[numSurtidores] = nuevoSurtidor;
+
+        // Liberar la memoria del arreglo anterior
+        delete[] surtidores;
+
+        // Actualizar el puntero y el contador de surtidores
+        surtidores = nuevoArreglo;
+        numSurtidores++;
     }
 
-    // Otros métodos...
 };
 
+// Clase RedNacional para gestionar la red nacional de estaciones de servicio
 class RedNacional {
 private:
     EstacionDeServicio** estaciones; // Puntero a un arreglo dinámico de estaciones de servicio
@@ -138,27 +181,61 @@ private:
 public:
     RedNacional(int numRegiones) {
         this->numEstaciones = 0;
-        this->estaciones = nullptr; // Inicialmente sin estaciones
+        this->estaciones = nullptr; // Inicialmente esta sin estaciones
         this->numRegiones = numRegiones;
         this->preciosPorRegion = new float[numRegiones]; // Asignar espacio para precios
     }
 
     ~RedNacional() {
-        delete[] preciosPorRegion; // Liberar memoria
-        // Liberar memoria de estaciones
+        delete[] preciosPorRegion; // Liberar memoria de precios por región
         for (int i = 0; i < numEstaciones; ++i) {
             delete estaciones[i];
         }
-        delete[] estaciones;
+        delete[] estaciones; // Liberar memoria de estaciones
     }
 
     void agregarEstacion(EstacionDeServicio* nuevaEstacion) {
+        // Crear un nuevo arreglo dinámico con un espacio adicional
+        EstacionDeServicio** nuevoArreglo = new EstacionDeServicio*[numEstaciones + 1];
 
+        // Copiar las estaciones existentes al nuevo arreglo
+        for (int i = 0; i < numEstaciones; ++i) {
+            nuevoArreglo[i] = estaciones[i];
+        }
+
+        // Agregar la nueva estación al arreglo
+        nuevoArreglo[numEstaciones] = nuevaEstacion;
+
+        // Liberar la memoria del arreglo anterior
+        delete[] estaciones;
+
+        // Actualizar el puntero y el contador de estaciones
+        estaciones = nuevoArreglo;
+        numEstaciones++;
     }
 
 };
 
 int main() {
-    // Prueba de funcionalidad aquí
+    //Estamos realizando una prueba del programa desde aquí
+    RedNacional redNacional(3);
+
+    // Crear una nueva estación de servicio
+    EstacionDeServicio* estacion1 = new EstacionDeServicio("Estacion 1", "E001", "Juan Perez", "Centro", 3);
+    redNacional.agregarEstacion(estacion1);
+
+    // Crear un surtidor y agregarlo a la estación
+    Surtidor* surtidor1 = new Surtidor("S001", "Modelo A");
+    estacion1->agregarSurtidor(surtidor1);
+
+    // Registrar una venta
+    Transaccion* transaccion1 = new Transaccion(20.5, "Regular", "Efectivo", "123456789", 50000);
+    surtidor1->registrarVenta(transaccion1);
+
+    // Mostrar información de la transacción
+    cout << "Fecha de la transaccion: " << transaccion1->getFecha() << endl;
+    cout << "Hora de la transaccion: " << transaccion1->getHora() << endl;
+    cout << "Cantidad de combustible: " << transaccion1->getCantidad() << " litros" << endl;
+
     return 0;
 }
