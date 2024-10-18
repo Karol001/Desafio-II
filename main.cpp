@@ -4,7 +4,6 @@
 
 using namespace std;
 
-// Clase Transaccion para registrar una transacción de combustible
 class Transaccion {
 private:
     string fecha;  // Formato: YYYY-MM-DD
@@ -39,36 +38,15 @@ public:
     }
 
     // Métodos getter para los atributos
-    string getFecha() const {
-        return fecha;
-    }
-
-    string getHora() const {
-        return hora;
-    }
-
-    float getCantidad() const {
-        return cantidad;
-    }
-
-    string getCategoriaCombustible() const {
-        return categoriaCombustible;
-    }
-
-    string getMetodoPago() const {
-        return metodoPago;
-    }
-
-    string getDocumentoCliente() const {
-        return documentoCliente;
-    }
-
-    float getMonto() const {
-        return monto;
-    }
+    string getFecha() const { return fecha; }
+    string getHora() const { return hora; }
+    float getCantidad() const { return cantidad; }
+    string getCategoriaCombustible() const { return categoriaCombustible; }
+    string getMetodoPago() const { return metodoPago; }
+    string getDocumentoCliente() const { return documentoCliente; }
+    float getMonto() const { return monto; }
 };
 
-// Clase Surtidor para manejar los surtidores de combustible
 class Surtidor {
 private:
     string codigo;
@@ -87,36 +65,44 @@ public:
     }
 
     ~Surtidor() {
-        // Liberar memoria de transacciones
+        // Liberar memoria asignada a las transacciones
         for (int i = 0; i < numTransacciones; ++i) {
             delete transacciones[i];
         }
         delete[] transacciones;
     }
 
-    void registrarVenta(Transaccion* nuevaTransaccion) {
-        // Crear un nuevo arreglo dinámico con un espacio adicional
-        Transaccion** nuevoArreglo = new Transaccion*[numTransacciones + 1];
+    void registrarVenta(float cantidad, string categoriaCombustible, string metodoPago, string documentoCliente, float monto) {
+        Transaccion* nuevaTransaccion = new Transaccion(cantidad, categoriaCombustible, metodoPago, documentoCliente, monto);
 
-        // Copiar las transacciones existentes al nuevo arreglo
+        // Redimensionar el arreglo de transacciones para agregar la nueva
+        Transaccion** nuevoArreglo = new Transaccion*[numTransacciones + 1];
         for (int i = 0; i < numTransacciones; ++i) {
             nuevoArreglo[i] = transacciones[i];
         }
-
-        // Agregar la nueva transacción al arreglo
         nuevoArreglo[numTransacciones] = nuevaTransaccion;
-
-        // Liberar la memoria del arreglo anterior
         delete[] transacciones;
-
-        // Actualizar el puntero y el contador de transacciones
         transacciones = nuevoArreglo;
-        numTransacciones++;
+        ++numTransacciones;
     }
 
+    bool estaActivo() const { return activo; }
+    void activar() { activo = true; }
+    void desactivar() { activo = false; }
+
+    string getCodigo() const { return codigo; }
+    int getNumTransacciones() const { return numTransacciones; }
+    float calcularVentasPorCategoria(string categoria) const {
+        float total = 0.0;
+        for (int i = 0; i < numTransacciones; ++i) {
+            if (transacciones[i]->getCategoriaCombustible() == categoria) {
+                total += transacciones[i]->getMonto();
+            }
+        }
+        return total;
+    }
 };
 
-// Clase EstacionDeServicio para gestionar las estaciones de servicio
 class EstacionDeServicio {
 private:
     string nombre;
@@ -141,36 +127,46 @@ public:
     }
 
     ~EstacionDeServicio() {
-        delete[] capacidadTanque; // Liberar memoria de capacidad del tanque
+        delete[] capacidadTanque;
         for (int i = 0; i < numSurtidores; ++i) {
             delete surtidores[i];
         }
-        delete[] surtidores; // Liberar memoria de surtidores
+        delete[] surtidores;
     }
 
     void agregarSurtidor(Surtidor* nuevoSurtidor) {
-        // Crear un nuevo arreglo dinámico con un espacio adicional
         Surtidor** nuevoArreglo = new Surtidor*[numSurtidores + 1];
-
-        // Copiar los surtidores existentes al nuevo arreglo
         for (int i = 0; i < numSurtidores; ++i) {
             nuevoArreglo[i] = surtidores[i];
         }
-
-        // Agregar el nuevo surtidor al arreglo
         nuevoArreglo[numSurtidores] = nuevoSurtidor;
-
-        // Liberar la memoria del arreglo anterior
         delete[] surtidores;
-
-        // Actualizar el puntero y el contador de surtidores
         surtidores = nuevoArreglo;
-        numSurtidores++;
+        ++numSurtidores;
     }
 
+    bool eliminarSurtidor() {
+        if (numSurtidores == 0) {
+            return false; // No hay surtidores para eliminar
+        }
+        // Desactivar el último surtidor como ejemplo, puedes modificar esto
+        delete surtidores[numSurtidores - 1];
+        numSurtidores--;
+        return true;
+    }
+
+    int getNumSurtidores() const { return numSurtidores; }
+    string getCodigo() const { return codigo; }
+
+    float calcularVentasPorCategoria(string categoria) const {
+        float total = 0.0;
+        for (int i = 0; i < numSurtidores; ++i) {
+            total += surtidores[i]->calcularVentasPorCategoria(categoria);
+        }
+        return total;
+    }
 };
 
-// Clase RedNacional para gestionar la red nacional de estaciones de servicio
 class RedNacional {
 private:
     EstacionDeServicio** estaciones; // Puntero a un arreglo dinámico de estaciones de servicio
@@ -181,61 +177,133 @@ private:
 public:
     RedNacional(int numRegiones) {
         this->numEstaciones = 0;
-        this->estaciones = nullptr; // Inicialmente esta sin estaciones
+        this->estaciones = nullptr; // Inicialmente sin estaciones
         this->numRegiones = numRegiones;
         this->preciosPorRegion = new float[numRegiones]; // Asignar espacio para precios
     }
 
     ~RedNacional() {
-        delete[] preciosPorRegion; // Liberar memoria de precios por región
+        delete[] preciosPorRegion;
         for (int i = 0; i < numEstaciones; ++i) {
             delete estaciones[i];
         }
-        delete[] estaciones; // Liberar memoria de estaciones
+        delete[] estaciones;
     }
 
     void agregarEstacion(EstacionDeServicio* nuevaEstacion) {
-        // Crear un nuevo arreglo dinámico con un espacio adicional
         EstacionDeServicio** nuevoArreglo = new EstacionDeServicio*[numEstaciones + 1];
-
-        // Copiar las estaciones existentes al nuevo arreglo
         for (int i = 0; i < numEstaciones; ++i) {
             nuevoArreglo[i] = estaciones[i];
         }
-
-        // Agregar la nueva estación al arreglo
         nuevoArreglo[numEstaciones] = nuevaEstacion;
-
-        // Liberar la memoria del arreglo anterior
         delete[] estaciones;
-
-        // Actualizar el puntero y el contador de estaciones
         estaciones = nuevoArreglo;
-        numEstaciones++;
+        ++numEstaciones;
     }
 
+    bool eliminarEstacion(string codigo) {
+        for (int i = 0; i < numEstaciones; ++i) {
+            if (estaciones[i]->getCodigo() == codigo && estaciones[i]->getNumSurtidores() == 0) {
+                delete estaciones[i];
+                for (int j = i; j < numEstaciones - 1; ++j) {
+                    estaciones[j] = estaciones[j + 1];
+                }
+                numEstaciones--;
+                return true; // Estación eliminada
+            }
+        }
+        return false; // No se pudo eliminar la estación
+    }
+
+    void mostrarVentasPorCategoria(string categoria) {
+        for (int i = 0; i < numEstaciones; ++i) {
+            float total = estaciones[i]->calcularVentasPorCategoria(categoria);
+            cout << "Estacion: " << estaciones[i]->getCodigo() << " - Ventas en " << categoria << ": " << total << endl;
+        }
+    }
+
+    void fijarPrecios(float* precios) {
+        for (int i = 0; i < numRegiones; ++i) {
+            preciosPorRegion[i] = precios[i];
+        }
+    }
+
+    int getNumEstaciones() const { return numEstaciones; }
 };
 
+void menu(RedNacional& red) {
+    int opcion;
+    do {
+        cout << "Menu de Gestion de la Red de Estaciones de Servicio:\n";
+        cout << "1. Agregar estacion de servicio\n";
+        cout << "2. Eliminar estacion de servicio\n";
+        cout << "3. Calcular ventas por categoria de combustible\n";
+        cout << "4. Fijar precios del combustible para toda la red\n";
+        cout << "0. Salir\n";
+        cout << "Seleccione una opcion: ";
+        cin >> opcion;
+
+        switch (opcion) {
+        case 1: {
+            string nombre, codigo, gerente, region;
+            int numCategorias;
+            cout << "Ingrese nombre: ";
+            cin >> nombre;
+            cout << "Ingrese codigo: ";
+            cin >> codigo;
+            cout << "Ingrese gerente: ";
+            cin >> gerente;
+            cout << "Ingrese region: ";
+            cin >> region;
+            cout << "Ingrese numero de categorias: ";
+            cin >> numCategorias;
+
+            EstacionDeServicio* nuevaEstacion = new EstacionDeServicio(nombre, codigo, gerente, region, numCategorias);
+            red.agregarEstacion(nuevaEstacion);
+            cout << "Estacion de servicio agregada con exito.\n";
+            break;
+        }
+        case 2: {
+            string codigo;
+            cout << "Ingrese codigo de la estacion a eliminar: ";
+            cin >> codigo;
+            if (red.eliminarEstacion(codigo)) {
+                cout << "Estacion eliminada con exito.\n";
+            } else {
+                cout << "No se pudo eliminar la estacion (puede tener surtidores activos).\n";
+            }
+            break;
+        }
+        case 3: {
+            string categoria;
+            cout << "Ingrese categoria de combustible: ";
+            cin >> categoria;
+            red.mostrarVentasPorCategoria(categoria);
+            break;
+        }
+        case 4: {
+            float* precios = new float[red.getNumEstaciones()]; // Ejemplo simple, deberías ajustar según regiones
+            cout << "Ingrese precios por region:\n";
+            for (int i = 0; i < red.getNumEstaciones(); ++i) {
+                cout << "Precio para la region " << i + 1 << ": ";
+                cin >> precios[i];
+            }
+            red.fijarPrecios(precios);
+            delete[] precios;
+            cout << "Precios fijados con exito.\n";
+            break;
+        }
+        case 0:
+            cout << "Saliendo del menu.\n";
+            break;
+        default:
+            cout << "Opción no valida, intente de nuevo.\n";
+        }
+    } while (opcion != 0);
+}
+
 int main() {
-    //Estamos realizando una prueba del programa desde aquí
-    RedNacional redNacional(3);
-
-    // Crear una nueva estación de servicio
-    EstacionDeServicio* estacion1 = new EstacionDeServicio("Estacion 1", "E001", "Juan Perez", "Centro", 3);
-    redNacional.agregarEstacion(estacion1);
-
-    // Crear un surtidor y agregarlo a la estación
-    Surtidor* surtidor1 = new Surtidor("S001", "Modelo A");
-    estacion1->agregarSurtidor(surtidor1);
-
-    // Registrar una venta
-    Transaccion* transaccion1 = new Transaccion(20.5, "Regular", "Efectivo", "123456789", 50000);
-    surtidor1->registrarVenta(transaccion1);
-
-    // Mostrar información de la transacción
-    cout << "Fecha de la transaccion: " << transaccion1->getFecha() << endl;
-    cout << "Hora de la transaccion: " << transaccion1->getHora() << endl;
-    cout << "Cantidad de combustible: " << transaccion1->getCantidad() << " litros" << endl;
-
+    RedNacional red(3); // Inicializamos con 3 regiones
+    menu(red);
     return 0;
 }
